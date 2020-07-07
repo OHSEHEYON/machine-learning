@@ -1,0 +1,48 @@
+# sex,smoker,region은 원래명목형변수
+insurance <- read.csv("C:\\R2\\dataset\\insurance.csv")
+str(insurance)
+insurance$sex <- as.factor(insurance$sex)
+insurance$smoker <- as.factor(insurance$smoker)
+insurance$region <- as.factor(insurance$region)
+str(insurance)
+
+# 종속변수는 charges이므로 변수파악
+# hist를 보고 오른쪽 꼬리가긴 분포임을 알수잇음
+summary(insurance$charges)
+hist(insurance$charges)
+
+# 특징간 관계탐색 : 상관행렬
+# 네개의 수치변수에 대한 상관행렬 생성
+cor(insurance[c("age","bmi","children","charges")])
+
+# 특징간 관계 시각화 : 산포도행렬
+# age와 charges의 관계는 상대적으로 여러 직선으로 보임
+# bmi와 expense의 관계는 두개의 구분되는 그룹이 보임
+pairs(insurance[c("age","bmi","children","charges")])
+
+# 특징간 관계 : 개선된 산포도행렬
+# 두변수간의 상관관계는 타원모양으로 나타남
+# 타원이 늘어질수록 상관관계는 강해짐
+# 타원이 중심에 있는 점은 두 변수에 대한 평균값 지점
+library(psych)
+pairs.panels(insurance[c("age","bmi","children","charges")])
+
+
+# 모델훈련
+reg_model <- lm(charges~age+children+bmi+sex+smoker+region, data=insurance)
+reg_model
+
+# 모델평가
+# 결정계수가 0.7509, 모델 P값이 0.05보다 작으므로 괜찮음
+# regionnorthwest , sexmale의 변수들의 P값이 0.05보다 큼.
+summary(reg_model)
+
+
+# 모델개선
+# age에 따른 charges는 2차형태에 가까울것이라고 예상
+# bmi에 따른 charges는 기준점을 두어 지시변수로 바꾸는게 좋을것이라고 예상
+# 비만과 흡연간의 상호작용 고려
+insurance$age2 <- insurance$age^2
+insurance$bmi30 <- ifelse(insurance$bmi >=30, 1, 0)
+reg_model2 <- lm(charges~age+children+bmi+sex+smoker+region+age2+bmi30*smoker, data=insurance)
+summary(reg_model2)
